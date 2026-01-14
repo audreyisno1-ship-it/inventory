@@ -26,8 +26,9 @@
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .no-select { user-select: none; }
         #root { width: 100%; }
-        .product-card { transition: all 0.25s ease; border-width: 1.5px; }
+        .product-card { transition: all 0.2s ease; border-width: 1.5px; }
         .product-card:active { transform: scale(0.98); }
+        .modal-overlay { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); }
     </style>
 <link rel="stylesheet" href="/index.css">
 </head>
@@ -35,7 +36,7 @@
     <div id="root"></div>
 
     <script type="module">
-        import React, { useState, useEffect, useMemo } from 'react';
+        import React, { useState, useEffect, useMemo, useCallback } from 'react';
         import { createRoot } from 'react-dom/client';
         import { GoogleGenAI } from "@google/genai";
 
@@ -50,7 +51,7 @@
             { id: 'ad-1', category: Category.AIR_DRIED, name: '貓咪抗拒不了貓草餅乾 catnip cookie for cat', wholesalePrice: 163, retailPrice: 250, currentStock: 0, safetyStock: 10, lastWeekStock: 0 },
             { id: 'ad-2', category: Category.AIR_DRIED, name: '無雞不可，經典雞胸肉乾 Chicken Breast Jerky', wholesalePrice: 163, retailPrice: 250, currentStock: 0, safetyStock: 10, lastWeekStock: 0 },
             { id: 'ad-3', category: Category.AIR_DRIED, name: '我愛吃鴨鴨，鴨胸肉乾 Duck Breast Jerky', wholesalePrice: 195, retailPrice: 300, currentStock: 0, safetyStock: 10, lastWeekStock: 0 },
-            { id: 'ad-4', category: Category.AIR_DRIED, name: '喀滋喀滋鴨氣管，毛孩專屬鴨氣管 Duck Trachea', wholesalePrice: 137, retailPrice: 210, currentStock: 0, safetyStock: 10, lastWeekStock: 0 },
+            { id: 'ad-4', category: Category.AIR_DRIED, name: '喀滋喀滋鴨氣管 Duck Trachea', wholesalePrice: 137, retailPrice: 210, currentStock: 0, safetyStock: 10, lastWeekStock: 0 },
             { id: 'ad-5', category: Category.AIR_DRIED, name: '鴨鴨繞南瓜 Duck Around Pumpkin', wholesalePrice: 169, retailPrice: 260, currentStock: 0, safetyStock: 10, lastWeekStock: 0 },
             { id: 'ad-6', category: Category.AIR_DRIED, name: '雞雞繞南瓜 Chicken Around Pumpkin', wholesalePrice: 163, retailPrice: 250, currentStock: 0, safetyStock: 10, lastWeekStock: 0 },
             { id: 'ad-7', category: Category.AIR_DRIED, name: '秋葵鴨肉肉 Okra Duck', wholesalePrice: 169, retailPrice: 260, currentStock: 0, safetyStock: 10, lastWeekStock: 0 },
@@ -74,8 +75,8 @@
             { id: 'ad-25', category: Category.AIR_DRIED, name: '雞肉鬆鬆 chicken floss', wholesalePrice: 130, retailPrice: 200, currentStock: 0, safetyStock: 10, lastWeekStock: 0 },
 
             // --- 凍乾零食 (19) ---
-            { id: 'fd-1', category: Category.FREEZE_DRIED, name: '嗷嗚原形脆，雞小方 Freeze Dried Chicken', wholesalePrice: 163, retailPrice: 250, currentStock: 0, safetyStock: 10, lastWeekStock: 0 },
-            { id: 'fd-2', category: Category.FREEZE_DRIED, name: '嗷嗚原形脆，雞大排 Freeze Dried Chicken Breast', wholesalePrice: 163, retailPrice: 250, currentStock: 0, safetyStock: 10, lastWeekStock: 0 },
+            { id: 'fd-1', category: Category.FREEZE_DRIED, name: '嗷嗚原形脆，雞小方', wholesalePrice: 163, retailPrice: 250, currentStock: 0, safetyStock: 10, lastWeekStock: 0 },
+            { id: 'fd-2', category: Category.FREEZE_DRIED, name: '嗷嗚原形脆，雞大排', wholesalePrice: 163, retailPrice: 250, currentStock: 0, safetyStock: 10, lastWeekStock: 0 },
             { id: 'fd-3', category: Category.FREEZE_DRIED, name: '嗷嗚原形脆，雞小胗', wholesalePrice: 137, retailPrice: 210, currentStock: 0, safetyStock: 10, lastWeekStock: 0 },
             { id: 'fd-4', category: Category.FREEZE_DRIED, name: '嗷嗚原形脆，雞皇冠', wholesalePrice: 137, retailPrice: 210, currentStock: 0, safetyStock: 10, lastWeekStock: 0 },
             { id: 'fd-5', category: Category.FREEZE_DRIED, name: '嗷嗚原形脆，雞細條', wholesalePrice: 163, retailPrice: 250, currentStock: 0, safetyStock: 10, lastWeekStock: 0 },
@@ -94,14 +95,14 @@
             { id: 'fd-18', category: Category.FREEZE_DRIED, name: '嗷嗚原形脆，元氣鴨菜方', wholesalePrice: 221, retailPrice: 340, currentStock: 0, safetyStock: 10, lastWeekStock: 0 },
             { id: 'fd-19', category: Category.FREEZE_DRIED, name: '嗷嗚原形脆，蔬菜纖方', wholesalePrice: 208, retailPrice: 320, currentStock: 0, safetyStock: 10, lastWeekStock: 0 },
 
-            // --- 用品 (依提供清單補全) ---
+            // --- 用品 ---
             { id: 'sp-1', category: Category.SUPPLIES, name: '狗狗慢食墊-蜜桃粉', wholesalePrice: 200, retailPrice: 310, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
             { id: 'sp-2', category: Category.SUPPLIES, name: '狗狗慢食墊-石灰藍', wholesalePrice: 200, retailPrice: 310, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
             { id: 'sp-3', category: Category.SUPPLIES, name: '狗狗慢食墊-蜂蜜黃', wholesalePrice: 200, retailPrice: 310, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
             { id: 'sp-4', category: Category.SUPPLIES, name: '狗狗慢食墊-灰草綠', wholesalePrice: 200, retailPrice: 310, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-5', category: Category.SUPPLIES, name: '貓薄荷魚玩具', wholesalePrice: 80, retailPrice: 150, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-5', category: Category.SUPPLIES, name: '貓薄荷魚玩具', wholesalePrice: 85, retailPrice: 150, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
             { id: 'sp-6', category: Category.SUPPLIES, name: '冰淇淋綿綿球-單顆', wholesalePrice: 60, retailPrice: 100, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-7', category: Category.SUPPLIES, name: '冰淇淋綿綿球-4顆', wholesalePrice: 200, retailPrice: 350, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-7', category: Category.SUPPLIES, name: '冰淇淋綿綿球-4顆', wholesalePrice: 210, retailPrice: 350, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
             { id: 'sp-8', category: Category.SUPPLIES, name: '藏食玩具-書本', wholesalePrice: 250, retailPrice: 420, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
             { id: 'sp-9', category: Category.SUPPLIES, name: '藏食玩具-曲奇餅乾', wholesalePrice: 250, retailPrice: 420, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
             { id: 'sp-10', category: Category.SUPPLIES, name: '藏食玩具-洋芋片', wholesalePrice: 250, retailPrice: 420, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
@@ -110,17 +111,17 @@
             { id: 'sp-13', category: Category.SUPPLIES, name: '矽膠吸盤餐盤附勺子-蜜桃粉', wholesalePrice: 240, retailPrice: 425, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
             { id: 'sp-14', category: Category.SUPPLIES, name: '矽膠吸盤餐盤附勺子-煙灰綠', wholesalePrice: 240, retailPrice: 425, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
             { id: 'sp-15', category: Category.SUPPLIES, name: '矽膠吸盤餐盤附勺子-奶白', wholesalePrice: 240, retailPrice: 425, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-16', category: Category.SUPPLIES, name: '牽繩-大狗狗-粉-140cm/2cm', wholesalePrice: 420, retailPrice: 720, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-17', category: Category.SUPPLIES, name: '牽繩-大狗狗-藍', wholesalePrice: 420, retailPrice: 720, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-18', category: Category.SUPPLIES, name: '牽繩-大狗狗-黑加侖', wholesalePrice: 420, retailPrice: 720, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-19', category: Category.SUPPLIES, name: '牽繩-大狗狗-黑', wholesalePrice: 420, retailPrice: 720, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-20', category: Category.SUPPLIES, name: '牽繩-大狗狗-紫', wholesalePrice: 420, retailPrice: 720, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-21', category: Category.SUPPLIES, name: '牽繩-大狗狗-橘', wholesalePrice: 420, retailPrice: 720, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-22', category: Category.SUPPLIES, name: '牽繩-大狗狗-綠', wholesalePrice: 420, retailPrice: 720, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-23', category: Category.SUPPLIES, name: '短牽繩-大狗狗-粉', wholesalePrice: 380, retailPrice: 650, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-24', category: Category.SUPPLIES, name: '短牽繩-大狗狗-藍', wholesalePrice: 380, retailPrice: 650, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-25', category: Category.SUPPLIES, name: '短牽繩-大狗狗-紫', wholesalePrice: 380, retailPrice: 650, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-26', category: Category.SUPPLIES, name: '短牽繩-大狗狗-黑', wholesalePrice: 380, retailPrice: 650, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-16', category: Category.SUPPLIES, name: '牽繩-大狗狗-粉-140cm/2cm', wholesalePrice: 450, retailPrice: 720, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-17', category: Category.SUPPLIES, name: '牽繩-大狗狗-藍', wholesalePrice: 450, retailPrice: 720, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-18', category: Category.SUPPLIES, name: '牽繩-大狗狗-黑加侖', wholesalePrice: 450, retailPrice: 720, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-19', category: Category.SUPPLIES, name: '牽繩-大狗狗-黑', wholesalePrice: 450, retailPrice: 720, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-20', category: Category.SUPPLIES, name: '牽繩-大狗狗-紫', wholesalePrice: 450, retailPrice: 720, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-21', category: Category.SUPPLIES, name: '牽繩-大狗狗-橘', wholesalePrice: 450, retailPrice: 720, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-22', category: Category.SUPPLIES, name: '牽繩-大狗狗-綠', wholesalePrice: 450, retailPrice: 720, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-23', category: Category.SUPPLIES, name: '短牽繩-大狗狗-粉', wholesalePrice: 380, retailPrice: 620, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-24', category: Category.SUPPLIES, name: '短牽繩-大狗狗-藍', wholesalePrice: 380, retailPrice: 620, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-25', category: Category.SUPPLIES, name: '短牽繩-大狗狗-紫', wholesalePrice: 380, retailPrice: 620, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-26', category: Category.SUPPLIES, name: '短牽繩-大狗狗-黑', wholesalePrice: 380, retailPrice: 620, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
             { id: 'sp-27', category: Category.SUPPLIES, name: '牽繩-小狗狗-咖啡色-150cm/8mm', wholesalePrice: 280, retailPrice: 480, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
             { id: 'sp-28', category: Category.SUPPLIES, name: '牽繩-小狗狗-紫色', wholesalePrice: 280, retailPrice: 480, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
             { id: 'sp-29', category: Category.SUPPLIES, name: '牽繩-小狗狗-綠色', wholesalePrice: 280, retailPrice: 480, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
@@ -133,39 +134,39 @@
             { id: 'sp-36', category: Category.SUPPLIES, name: '防暴衝胸背-藍S', wholesalePrice: 750, retailPrice: 1200, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
             { id: 'sp-37', category: Category.SUPPLIES, name: '防暴衝胸背-藍M', wholesalePrice: 750, retailPrice: 1200, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
             { id: 'sp-38', category: Category.SUPPLIES, name: '防暴衝胸背-藍L', wholesalePrice: 750, retailPrice: 1200, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-39', category: Category.SUPPLIES, name: '花花逗貓棒', wholesalePrice: 85, retailPrice: 150, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-40', category: Category.SUPPLIES, name: '零食保鮮罐-淺灰粉-S-200ml', wholesalePrice: 160, retailPrice: 290, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-39', category: Category.SUPPLIES, name: '花花逗貓棒', wholesalePrice: 80, retailPrice: 150, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-40', category: Category.SUPPLIES, name: '零食保鮮罐-淺灰粉-S-200ml', wholesalePrice: 180, retailPrice: 290, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
             { id: 'sp-41', category: Category.SUPPLIES, name: '零食保鮮罐-淺灰粉-M-300ml', wholesalePrice: 210, retailPrice: 390, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
             { id: 'sp-42', category: Category.SUPPLIES, name: '零食保鮮罐-淺灰粉-L-600ml', wholesalePrice: 280, retailPrice: 490, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-43', category: Category.SUPPLIES, name: '零食保鮮罐-芥末黃-S', wholesalePrice: 160, retailPrice: 290, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-43', category: Category.SUPPLIES, name: '零食保鮮罐-芥末黃-S', wholesalePrice: 180, retailPrice: 290, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
             { id: 'sp-44', category: Category.SUPPLIES, name: '零食保鮮罐-芥末黃-M', wholesalePrice: 210, retailPrice: 390, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
             { id: 'sp-45', category: Category.SUPPLIES, name: '零食保鮮罐-芥末黃-L', wholesalePrice: 280, retailPrice: 490, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-46', category: Category.SUPPLIES, name: '零食保鮮罐-嫩草綠-S', wholesalePrice: 160, retailPrice: 290, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-46', category: Category.SUPPLIES, name: '零食保鮮罐-嫩草綠-S', wholesalePrice: 180, retailPrice: 290, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
             { id: 'sp-47', category: Category.SUPPLIES, name: '零食保鮮罐-嫩草綠-M', wholesalePrice: 210, retailPrice: 390, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
             { id: 'sp-48', category: Category.SUPPLIES, name: '零食保鮮罐-嫩草綠-L', wholesalePrice: 280, retailPrice: 490, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-49', category: Category.SUPPLIES, name: '零食保鮮罐-淡海藍-S', wholesalePrice: 160, retailPrice: 290, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-49', category: Category.SUPPLIES, name: '零食保鮮罐-淡海藍-S', wholesalePrice: 180, retailPrice: 290, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
             { id: 'sp-50', category: Category.SUPPLIES, name: '零食保鮮罐-淡海藍-M', wholesalePrice: 210, retailPrice: 390, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
             { id: 'sp-51', category: Category.SUPPLIES, name: '零食保鮮罐-淡海藍-L', wholesalePrice: 280, retailPrice: 490, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-52', category: Category.SUPPLIES, name: '錐形伊莉莎白圈-奶酪黄-S', wholesalePrice: 360, retailPrice: 600, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-53', category: Category.SUPPLIES, name: '錐形伊莉莎白圈-奶酪黄-M', wholesalePrice: 360, retailPrice: 600, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-54', category: Category.SUPPLIES, name: '錐形伊莉莎白圈-奶酪黄-L', wholesalePrice: 360, retailPrice: 600, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-55', category: Category.SUPPLIES, name: '錐形伊莉莎白圈-奶酪黄-XL', wholesalePrice: 360, retailPrice: 600, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-56', category: Category.SUPPLIES, name: '錐形伊莉莎白圈-抹茶綠-S', wholesalePrice: 360, retailPrice: 600, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-57', category: Category.SUPPLIES, name: '錐形伊莉莎白圈-抹茶綠-M', wholesalePrice: 360, retailPrice: 600, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-58', category: Category.SUPPLIES, name: '錐形伊莉莎白圈-抹茶綠-L', wholesalePrice: 360, retailPrice: 600, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-59', category: Category.SUPPLIES, name: '錐形伊莉莎白圈-抹茶綠-XL', wholesalePrice: 360, retailPrice: 600, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-60', category: Category.SUPPLIES, name: '花朵伊莉莎白圈-夢幻紫-S', wholesalePrice: 410, retailPrice: 680, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-61', category: Category.SUPPLIES, name: '花朵伊莉莎白圈-夢幻紫-M', wholesalePrice: 410, retailPrice: 680, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-62', category: Category.SUPPLIES, name: '花朵伊莉莎白圈-夢幻紫-L', wholesalePrice: 410, retailPrice: 680, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-63', category: Category.SUPPLIES, name: '花朵伊莉莎白圈-南瓜橙-S', wholesalePrice: 410, retailPrice: 680, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-64', category: Category.SUPPLIES, name: '花朵伊莉莎白圈-南瓜橙-M', wholesalePrice: 410, retailPrice: 680, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-65', category: Category.SUPPLIES, name: '花朵伊莉莎白圈-南瓜橙-L', wholesalePrice: 410, retailPrice: 680, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-66', category: Category.SUPPLIES, name: '花朵伊莉莎白圈-天空藍-S', wholesalePrice: 410, retailPrice: 680, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-67', category: Category.SUPPLIES, name: '花朵伊莉莎白圈-天空藍-M', wholesalePrice: 410, retailPrice: 680, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-68', category: Category.SUPPLIES, name: '花朵伊莉莎白圈-天空藍-L', wholesalePrice: 410, retailPrice: 680, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-69', category: Category.SUPPLIES, name: '花朵伊莉莎白圈-嫩草綠-S', wholesalePrice: 410, retailPrice: 680, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-70', category: Category.SUPPLIES, name: '花朵伊莉莎白圈-嫩草綠-M', wholesalePrice: 410, retailPrice: 680, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-71', category: Category.SUPPLIES, name: '花朵伊莉莎白圈-嫩草綠-L', wholesalePrice: 410, retailPrice: 680, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-52', category: Category.SUPPLIES, name: '錐形伊莉莎白圈-奶酪黄-S', wholesalePrice: 350, retailPrice: 600, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-53', category: Category.SUPPLIES, name: '錐形伊莉莎白圈-奶酪黄-M', wholesalePrice: 350, retailPrice: 600, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-54', category: Category.SUPPLIES, name: '錐形伊莉莎白圈-奶酪黄-L', wholesalePrice: 350, retailPrice: 600, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-55', category: Category.SUPPLIES, name: '錐形伊莉莎白圈-奶酪黄-XL', wholesalePrice: 350, retailPrice: 600, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-56', category: Category.SUPPLIES, name: '錐形伊莉莎白圈-抹茶綠-S', wholesalePrice: 350, retailPrice: 600, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-57', category: Category.SUPPLIES, name: '錐形伊莉莎白圈-抹茶綠-M', wholesalePrice: 350, retailPrice: 600, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-58', category: Category.SUPPLIES, name: '錐形伊莉莎白圈-抹茶綠-L', wholesalePrice: 350, retailPrice: 600, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-59', category: Category.SUPPLIES, name: '錐形伊莉莎白圈-抹茶綠-XL', wholesalePrice: 350, retailPrice: 600, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-60', category: Category.SUPPLIES, name: '花朵伊莉莎白圈-夢幻紫-S', wholesalePrice: 420, retailPrice: 680, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-61', category: Category.SUPPLIES, name: '花朵伊莉莎白圈-夢幻紫-M', wholesalePrice: 420, retailPrice: 680, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-62', category: Category.SUPPLIES, name: '花朵伊莉莎白圈-夢幻紫-L', wholesalePrice: 420, retailPrice: 680, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-63', category: Category.SUPPLIES, name: '花朵伊莉莎白圈-南瓜橙-S', wholesalePrice: 420, retailPrice: 680, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-64', category: Category.SUPPLIES, name: '花朵伊莉莎白圈-南瓜橙-M', wholesalePrice: 420, retailPrice: 680, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-65', category: Category.SUPPLIES, name: '花朵伊莉莎白圈-南瓜橙-L', wholesalePrice: 420, retailPrice: 680, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-66', category: Category.SUPPLIES, name: '花朵伊莉莎白圈-天空藍-S', wholesalePrice: 420, retailPrice: 680, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-67', category: Category.SUPPLIES, name: '花朵伊莉莎白圈-天空藍-M', wholesalePrice: 420, retailPrice: 680, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-68', category: Category.SUPPLIES, name: '花朵伊莉莎白圈-天空藍-L', wholesalePrice: 420, retailPrice: 680, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-69', category: Category.SUPPLIES, name: '花朵伊莉莎白圈-嫩草綠-S', wholesalePrice: 420, retailPrice: 680, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-70', category: Category.SUPPLIES, name: '花朵伊莉莎白圈-嫩草綠-M', wholesalePrice: 420, retailPrice: 680, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-71', category: Category.SUPPLIES, name: '花朵伊莉莎白圈-嫩草綠-L', wholesalePrice: 420, retailPrice: 680, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
             { id: 'sp-72', category: Category.SUPPLIES, name: '自製大狗花朵圈-粉-M', wholesalePrice: 500, retailPrice: 680, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
             { id: 'sp-73', category: Category.SUPPLIES, name: '自製大狗花朵圈-粉-L', wholesalePrice: 650, retailPrice: 820, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
             { id: 'sp-74', category: Category.SUPPLIES, name: '自製大狗花朵圈-粉-XL', wholesalePrice: 750, retailPrice: 980, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
@@ -185,46 +186,46 @@
             { id: 'sp-88', category: Category.SUPPLIES, name: '雙頭轉接牽繩-橘粉', wholesalePrice: 580, retailPrice: 880, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
             { id: 'sp-89', category: Category.SUPPLIES, name: '雙頭轉接牽繩-紫', wholesalePrice: 580, retailPrice: 880, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
             { id: 'sp-90', category: Category.SUPPLIES, name: '雙頭轉接牽繩-黑白', wholesalePrice: 580, retailPrice: 880, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-91', category: Category.SUPPLIES, name: '撿便袋-6袋', wholesalePrice: 70, retailPrice: 120, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-91', category: Category.SUPPLIES, name: '撿便袋-6袋', wholesalePrice: 65, retailPrice: 120, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
             { id: 'sp-92', category: Category.SUPPLIES, name: '棉花糖撿便器-霓虹果醬粉紫', wholesalePrice: 145, retailPrice: 210, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
             { id: 'sp-93', category: Category.SUPPLIES, name: '棉花糖撿便器-抹茶椰林粉白', wholesalePrice: 145, retailPrice: 210, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
             { id: 'sp-94', category: Category.SUPPLIES, name: '棉花糖撿便器-焦糖海鹽藍白', wholesalePrice: 145, retailPrice: 210, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
             { id: 'sp-95', category: Category.SUPPLIES, name: '棉花糖撿便器-銀色', wholesalePrice: 145, retailPrice: 210, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
             { id: 'sp-96', category: Category.SUPPLIES, name: '棉花糖撿便器-黑粉', wholesalePrice: 145, retailPrice: 210, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-97', category: Category.SUPPLIES, name: '超耐咬狗骨頭-紅色', wholesalePrice: 120, retailPrice: 200, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-98', category: Category.SUPPLIES, name: '超耐咬狗骨頭-藍色', wholesalePrice: 120, retailPrice: 200, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-99', category: Category.SUPPLIES, name: '超耐咬狗骨頭-綠色', wholesalePrice: 120, retailPrice: 200, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-100', category: Category.SUPPLIES, name: '超耐咬狗骨頭-紫色', wholesalePrice: 120, retailPrice: 200, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-101', category: Category.SUPPLIES, name: '超耐咬狗骨頭-黃色', wholesalePrice: 120, retailPrice: 200, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-102', category: Category.SUPPLIES, name: '超耐咬狗骨頭-扣環', wholesalePrice: 50, retailPrice: 100, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-103', category: Category.SUPPLIES, name: '花朵玩具', wholesalePrice: 150, retailPrice: 250, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-97', category: Category.SUPPLIES, name: '超耐咬狗骨頭-紅色', wholesalePrice: 110, retailPrice: 200, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-98', category: Category.SUPPLIES, name: '超耐咬狗骨頭-藍色', wholesalePrice: 110, retailPrice: 200, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-99', category: Category.SUPPLIES, name: '超耐咬狗骨頭-綠色', wholesalePrice: 110, retailPrice: 200, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-100', category: Category.SUPPLIES, name: '超耐咬狗骨頭-紫色', wholesalePrice: 110, retailPrice: 200, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-101', category: Category.SUPPLIES, name: '超耐咬狗骨頭-黃色', wholesalePrice: 110, retailPrice: 200, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-102', category: Category.SUPPLIES, name: '超耐咬狗骨頭-扣環', wholesalePrice: 60, retailPrice: 100, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-103', category: Category.SUPPLIES, name: '花朵玩具', wholesalePrice: 140, retailPrice: 250, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
             { id: 'sp-104', category: Category.SUPPLIES, name: 'BITE ME 土撥鼠', wholesalePrice: 580, retailPrice: 880, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
             { id: 'sp-105', category: Category.SUPPLIES, name: 'BITE ME 浣熊', wholesalePrice: 580, retailPrice: 880, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-106', category: Category.SUPPLIES, name: 'BITE ME 松鼠', wholesalePrice: 220, retailPrice: 380, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-107', category: Category.SUPPLIES, name: 'BITE ME 老鼠', wholesalePrice: 220, retailPrice: 380, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-108', category: Category.SUPPLIES, name: 'BITE ME 曲奇', wholesalePrice: 280, retailPrice: 420, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-109', category: Category.SUPPLIES, name: 'DINGDOG 捲餅', wholesalePrice: 480, retailPrice: 680, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-110', category: Category.SUPPLIES, name: 'DINGDOG 壽司', wholesalePrice: 380, retailPrice: 680, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-111', category: Category.SUPPLIES, name: 'DINGDOG 蔥', wholesalePrice: 320, retailPrice: 680, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-106', category: Category.SUPPLIES, name: 'BITE ME 松鼠', wholesalePrice: 230, retailPrice: 380, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-107', category: Category.SUPPLIES, name: 'BITE ME 老鼠', wholesalePrice: 230, retailPrice: 380, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-108', category: Category.SUPPLIES, name: 'BITE ME 曲奇', wholesalePrice: 260, retailPrice: 420, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-109', category: Category.SUPPLIES, name: 'DINGDOG 捲餅', wholesalePrice: 450, retailPrice: 680, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-110', category: Category.SUPPLIES, name: 'DINGDOG 壽司', wholesalePrice: 450, retailPrice: 680, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-111', category: Category.SUPPLIES, name: 'DINGDOG 蔥', wholesalePrice: 450, retailPrice: 680, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
             { id: 'sp-112', category: Category.SUPPLIES, name: 'DINGDOG 薯條', wholesalePrice: 380, retailPrice: 580, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-113', category: Category.SUPPLIES, name: 'DINGDOG 炸蝦', wholesalePrice: 320, retailPrice: 680, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-114', category: Category.SUPPLIES, name: 'DINGDOG 大漢堡', wholesalePrice: 420, retailPrice: 680, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-115', category: Category.SUPPLIES, name: 'DINGDOG 小漢堡', wholesalePrice: 365, retailPrice: 580, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-116', category: Category.SUPPLIES, name: 'DINGDOG 鮪魚罐頭', wholesalePrice: 365, retailPrice: 580, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-113', category: Category.SUPPLIES, name: 'DINGDOG 炸蝦', wholesalePrice: 450, retailPrice: 680, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-114', category: Category.SUPPLIES, name: 'DINGDOG 大漢堡', wholesalePrice: 450, retailPrice: 680, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-115', category: Category.SUPPLIES, name: 'DINGDOG 小漢堡', wholesalePrice: 380, retailPrice: 580, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-116', category: Category.SUPPLIES, name: 'DINGDOG 鮪魚罐頭', wholesalePrice: 380, retailPrice: 580, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
             { id: 'sp-117', category: Category.SUPPLIES, name: 'DINGDOG 草莓果醬', wholesalePrice: 380, retailPrice: 580, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
             { id: 'sp-118', category: Category.SUPPLIES, name: 'DINGDOG 橘子果醬', wholesalePrice: 380, retailPrice: 580, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-119', category: Category.SUPPLIES, name: 'OKTK 毛孩衣 粉綠 L', wholesalePrice: 820, retailPrice: 1380, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-120', category: Category.SUPPLIES, name: 'OKTK 毛孩衣 粉綠 XL', wholesalePrice: 820, retailPrice: 1380, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-121', category: Category.SUPPLIES, name: 'OKTK 毛孩衣 粉綠 2XL', wholesalePrice: 820, retailPrice: 1380, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-122', category: Category.SUPPLIES, name: 'OKTK 毛孩衣 粉綠 3XL', wholesalePrice: 820, retailPrice: 1380, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-123', category: Category.SUPPLIES, name: 'OKTK 毛孩衣 粉綠 5XL', wholesalePrice: 820, retailPrice: 1380, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-124', category: Category.SUPPLIES, name: 'OKTK 毛孩衣 粉綠 6XL', wholesalePrice: 820, retailPrice: 1380, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-125', category: Category.SUPPLIES, name: 'OKTK 毛孩衣 黑白 L', wholesalePrice: 820, retailPrice: 1380, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-126', category: Category.SUPPLIES, name: 'OKTK 毛孩衣 黑白 XL', wholesalePrice: 820, retailPrice: 1380, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-127', category: Category.SUPPLIES, name: 'OKTK 毛孩衣 黑白 2XL', wholesalePrice: 820, retailPrice: 1380, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-128', category: Category.SUPPLIES, name: 'OKTK 毛孩衣 黑白 3XL', wholesalePrice: 820, retailPrice: 1380, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-129', category: Category.SUPPLIES, name: 'OKTK 毛孩衣 黑白 5XL', wholesalePrice: 820, retailPrice: 1380, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
-            { id: 'sp-130', category: Category.SUPPLIES, name: 'OKTK 毛孩衣 黑白 6XL', wholesalePrice: 820, retailPrice: 1380, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
+            { id: 'sp-119', category: Category.SUPPLIES, name: 'OKTK 毛孩衣 粉綠 L', wholesalePrice: 820, retailPrice: 1380, currentStock: 0, safetyStock: 3, lastWeekStock: 0 },
+            { id: 'sp-120', category: Category.SUPPLIES, name: 'OKTK 毛孩衣 粉綠 XL', wholesalePrice: 820, retailPrice: 1380, currentStock: 0, safetyStock: 3, lastWeekStock: 0 },
+            { id: 'sp-121', category: Category.SUPPLIES, name: 'OKTK 毛孩衣 粉綠 2XL', wholesalePrice: 820, retailPrice: 1380, currentStock: 0, safetyStock: 3, lastWeekStock: 0 },
+            { id: 'sp-122', category: Category.SUPPLIES, name: 'OKTK 毛孩衣 粉綠 3XL', wholesalePrice: 820, retailPrice: 1380, currentStock: 0, safetyStock: 3, lastWeekStock: 0 },
+            { id: 'sp-123', category: Category.SUPPLIES, name: 'OKTK 毛孩衣 粉綠 5XL', wholesalePrice: 820, retailPrice: 1380, currentStock: 0, safetyStock: 3, lastWeekStock: 0 },
+            { id: 'sp-124', category: Category.SUPPLIES, name: 'OKTK 毛孩衣 粉綠 6XL', wholesalePrice: 820, retailPrice: 1380, currentStock: 0, safetyStock: 3, lastWeekStock: 0 },
+            { id: 'sp-125', category: Category.SUPPLIES, name: 'OKTK 毛孩衣 黑白 L', wholesalePrice: 820, retailPrice: 1380, currentStock: 0, safetyStock: 3, lastWeekStock: 0 },
+            { id: 'sp-126', category: Category.SUPPLIES, name: 'OKTK 毛孩衣 黑白 XL', wholesalePrice: 820, retailPrice: 1380, currentStock: 0, safetyStock: 3, lastWeekStock: 0 },
+            { id: 'sp-127', category: Category.SUPPLIES, name: 'OKTK 毛孩衣 黑白 2XL', wholesalePrice: 820, retailPrice: 1380, currentStock: 0, safetyStock: 3, lastWeekStock: 0 },
+            { id: 'sp-128', category: Category.SUPPLIES, name: 'OKTK 毛孩衣 黑白 3XL', wholesalePrice: 820, retailPrice: 1380, currentStock: 0, safetyStock: 3, lastWeekStock: 0 },
+            { id: 'sp-129', category: Category.SUPPLIES, name: 'OKTK 毛孩衣 黑白 5XL', wholesalePrice: 820, retailPrice: 1380, currentStock: 0, safetyStock: 3, lastWeekStock: 0 },
+            { id: 'sp-130', category: Category.SUPPLIES, name: 'OKTK 毛孩衣 黑白 6XL', wholesalePrice: 820, retailPrice: 1380, currentStock: 0, safetyStock: 3, lastWeekStock: 0 },
             { id: 'sp-131', category: Category.SUPPLIES, name: 'OKTK 領巾', wholesalePrice: 280, retailPrice: 480, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
             { id: 'sp-132', category: Category.SUPPLIES, name: '韓國慢食盤 黃色', wholesalePrice: 480, retailPrice: 780, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
             { id: 'sp-133', category: Category.SUPPLIES, name: '韓國逗貓棒 替換頭１', wholesalePrice: 120, retailPrice: 200, currentStock: 0, safetyStock: 5, lastWeekStock: 0 },
@@ -237,12 +238,68 @@
             const year = date.getFullYear() - 1911;
             const month = (date.getMonth() + 1).toString().padStart(2, '0');
             const day = date.getDate().toString().padStart(2, '0');
-            return `${year}年${month}月${day}日`;
+            return `民國 ${year}年${month}月${day}日`;
         }
+
+        const AddProductModal = ({ isOpen, onClose, onAdd }) => {
+            const [formData, setFormData] = useState({ name: '', category: Category.AIR_DRIED, wholesalePrice: 0, retailPrice: 0, currentStock: 0 });
+            const safetyStock = formData.category === Category.SUPPLIES ? 5 : 10;
+
+            if (!isOpen) return null;
+
+            return React.createElement('div', { className: "fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay animate-in fade-in duration-200" },
+                React.createElement('div', { className: "bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in duration-200" },
+                    React.createElement('div', { className: "bg-indigo-600 px-6 py-4 flex justify-between items-center text-white" },
+                        React.createElement('h3', { className: "text-lg font-black" }, "新增產品"),
+                        React.createElement('button', { onClick: onClose, className: "text-white/70 hover:text-white" }, React.createElement('i', { className: "fas fa-times" }))
+                    ),
+                    React.createElement('form', { 
+                        className: "p-6 space-y-4", 
+                        onSubmit: (e) => {
+                            e.preventDefault();
+                            if(!formData.name) return;
+                            onAdd({ ...formData, id: `custom-${Date.now()}`, safetyStock, lastWeekStock: 0 });
+                            setFormData({ name: '', category: Category.AIR_DRIED, wholesalePrice: 0, retailPrice: 0, currentStock: 0 });
+                        }
+                    },
+                        React.createElement('div', null,
+                            React.createElement('label', { className: "block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1" }, "產品名稱"),
+                            React.createElement('input', { type: "text", required: true, className: "w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-100", value: formData.name, onChange: e => setFormData({...formData, name: e.target.value}) })
+                        ),
+                        React.createElement('div', { className: "grid grid-cols-2 gap-3" },
+                            React.createElement('div', null,
+                                React.createElement('label', { className: "block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1" }, "分類"),
+                                React.createElement('select', { className: "w-full px-4 py-3 rounded-xl border border-slate-200 outline-none bg-white", value: formData.category, onChange: e => setFormData({...formData, category: e.target.value}) },
+                                    Object.values(Category).map(cat => React.createElement('option', { key: cat, value: cat }, cat))
+                                )
+                            ),
+                            React.createElement('div', null,
+                                React.createElement('label', { className: "block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1" }, "安全庫存"),
+                                React.createElement('div', { className: "px-4 py-3 bg-slate-50 rounded-xl border border-slate-100 text-slate-400 font-bold" }, safetyStock)
+                            )
+                        ),
+                        React.createElement('div', { className: "grid grid-cols-2 gap-3" },
+                            React.createElement('div', null,
+                                React.createElement('label', { className: "block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1" }, "批價"),
+                                React.createElement('input', { type: "number", className: "w-full px-4 py-3 rounded-xl border border-slate-200 outline-none", value: formData.wholesalePrice, onChange: e => setFormData({...formData, wholesalePrice: parseInt(e.target.value) || 0}) })
+                            ),
+                            React.createElement('div', null,
+                                React.createElement('label', { className: "block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1" }, "零售價"),
+                                React.createElement('input', { type: "number", className: "w-full px-4 py-3 rounded-xl border border-slate-200 outline-none", value: formData.retailPrice, onChange: e => setFormData({...formData, retailPrice: parseInt(e.target.value) || 0}) })
+                            )
+                        ),
+                        React.createElement('div', { className: "pt-4 flex gap-2" },
+                            React.createElement('button', { type: "button", onClick: onClose, className: "flex-1 py-3 rounded-xl border border-slate-200 text-slate-400 font-black text-xs uppercase tracking-widest" }, "取消"),
+                            React.createElement('button', { type: "submit", className: "flex-1 py-3 rounded-xl bg-indigo-600 text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-indigo-100" }, "確認新增")
+                        )
+                    )
+                )
+            );
+        };
 
         const App = () => {
             const [products, setProducts] = useState(() => {
-                const saved = localStorage.getItem('aoawow-inventory-v7-final');
+                const saved = localStorage.getItem('aoawow-inventory-v9-full');
                 return saved ? JSON.parse(saved) : INITIAL_PRODUCTS;
             });
             const [session, setSession] = useState({ date: new Date().toISOString().split('T')[0], inspector: '管理員' });
@@ -250,17 +307,18 @@
             const [activeTab, setActiveTab] = useState('全部');
             const [aiAnalysis, setAiAnalysis] = useState(null);
             const [isAnalyzing, setIsAnalyzing] = useState(false);
+            const [isModalOpen, setIsModalOpen] = useState(false);
 
             useEffect(() => {
-                localStorage.setItem('aoawow-inventory-v7-final', JSON.stringify(products));
+                localStorage.setItem('aoawow-inventory-v9-full', JSON.stringify(products));
             }, [products]);
 
             const stats = useMemo(() => products.reduce((acc, p) => ({
                 totalItems: acc.totalItems + 1,
                 lowStockItems: acc.lowStockItems + (p.currentStock <= p.safetyStock ? 1 : 0),
-                totalWholesaleValue: acc.totalWholesaleValue + (p.wholesalePrice * p.currentStock),
-                totalRetailValue: acc.totalRetailValue + (p.retailPrice * p.currentStock),
-            }), { totalItems: 0, lowStockItems: 0, totalWholesaleValue: 0, totalRetailValue: 0 }), [products]);
+                totalWholesale: acc.totalWholesale + (p.wholesalePrice * p.currentStock),
+                totalRetail: acc.totalRetail + (p.retailPrice * p.currentStock)
+            }), { totalItems: 0, lowStockItems: 0, totalWholesale: 0, totalRetail: 0 }), [products]);
 
             const filteredProducts = products.filter(p => 
                 (activeTab === '全部' || p.category === activeTab) && 
@@ -272,70 +330,91 @@
             };
 
             const handleStartInventory = () => {
-                if (confirm('確定重置新週盤點？目前的數量將歸零。')) {
+                if (confirm('確定重置新週盤點？「目前數量」將歸零，「上週數量」將更新。')) {
                     setProducts(prev => prev.map(p => ({ ...p, lastWeekStock: p.currentStock, currentStock: 0 })));
                     setSession(prev => ({ ...prev, date: new Date().toISOString().split('T')[0] }));
                 }
+            };
+
+            const handleExportExcel = () => {
+                const headers = ['分類', '品名', '目前庫存', '安全庫存', '上週庫存', '批價', '零售價'];
+                const rows = products.map(p => [p.category, p.name, p.currentStock, p.safetyStock, p.lastWeekStock, p.wholesalePrice, p.retailPrice]);
+                const csvContent = "\uFEFF" + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', `AOAWOW_盤點表_${session.date}.csv`);
+                link.click();
             };
 
             const handleAI = async () => {
                 setIsAnalyzing(true);
                 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
                 const lowStockList = products.filter(p => p.currentStock <= p.safetyStock).map(p => p.name).join(', ');
-                const prompt = `你是 AOAWOW 的庫存分析專家。目前低庫存商品：${lowStockList || '無'}。請給予專業的補貨建議。100字內。`;
+                const prompt = `你是 AOAWOW 庫存分析師。目前低庫存商品：${lowStockList || '無'}。請給予專業簡短的建議。100字內。`;
                 try {
                     const res = await ai.models.generateContent({ model: "gemini-3-flash-preview", contents: prompt });
                     setAiAnalysis(res.text);
-                } catch (e) { setAiAnalysis("AI 分析功能暫時無法連線。"); }
+                } catch (e) { setAiAnalysis("AI 功能暫時連線不穩定。"); }
                 finally { setIsAnalyzing(false); }
             };
 
             return React.createElement('div', { className: "min-h-screen flex flex-col bg-slate-50 w-full" },
+                React.createElement(AddProductModal, { isOpen: isModalOpen, onClose: () => setIsModalOpen(false), onAdd: (p) => { setProducts([p, ...products]); setIsModalOpen(false); } }),
+                
                 // Navbar
                 React.createElement('nav', { className: "bg-white border-b sticky top-0 z-40 px-4 h-16 flex items-center justify-between shadow-sm w-full" },
                     React.createElement('div', { className: "flex items-center gap-2" },
-                        React.createElement('div', { className: "w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white" }, React.createElement('i', { className: "fas fa-paw" })),
+                        React.createElement('div', { className: "w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white" }, React.createElement('i', { className: "fas fa-paw text-xs" })),
                         React.createElement('h1', { className: "text-lg font-black tracking-tighter" }, "AOAWOW ", React.createElement('span', { className: "text-indigo-600" }, "管理"))
                     ),
-                    React.createElement('div', { className: "flex items-center gap-3" },
-                        React.createElement('div', { className: "text-[10px] text-right" },
+                    React.createElement('div', { className: "flex items-center gap-2 text-right" },
+                        React.createElement('div', { className: "text-[10px]" },
                             React.createElement('div', { className: "font-black text-slate-700" }, getRocDate(session.date)),
-                            React.createElement('input', { type: "text", value: session.inspector, onChange: e => setSession({...session, inspector: e.target.value}), className: "bg-transparent border-none p-0 w-16 text-right outline-none text-slate-400 font-bold focus:ring-0" })
+                            React.createElement('div', { className: "flex items-center justify-end" },
+                                React.createElement('span', { className: "text-slate-300 mr-1" }, "盤點人:"),
+                                React.createElement('input', { type: "text", value: session.inspector, onChange: e => setSession({...session, inspector: e.target.value}), className: "bg-transparent border-none p-0 w-12 text-right outline-none text-slate-500 font-bold focus:ring-0" })
+                            )
                         ),
-                        React.createElement('button', { onClick: () => setProducts(INITIAL_PRODUCTS), className: "text-slate-200" }, React.createElement('i', { className: "fas fa-sync" }))
+                        React.createElement('button', { onClick: () => { if(confirm('重置為初始清單？')) setProducts(INITIAL_PRODUCTS); }, className: "text-slate-200 ml-1" }, React.createElement('i', { className: "fas fa-sync text-xs" }))
                     )
                 ),
 
                 React.createElement('main', { className: "w-full px-4 mt-6 space-y-6 flex-1 max-w-2xl mx-auto" },
-                    // Summary Stats
-                    React.createElement('div', { className: "grid grid-cols-2 gap-3" },
+                    // Summary Grid
+                    React.createElement('div', { className: "grid grid-cols-2 sm:grid-cols-4 gap-3" },
                         [
                             { l: '品項總數', v: stats.totalItems, i: 'fa-box', c: 'indigo' },
-                            { l: '缺貨警告', v: stats.lowStockItems, i: 'fa-bell', c: 'rose', w: stats.lowStockItems > 0 }
-                        ].map(s => React.createElement('div', { key: s.l, className: "bg-white p-4 rounded-2xl border border-slate-100 flex items-center gap-3 shadow-sm" },
-                            React.createElement('div', { className: `w-10 h-10 bg-${s.c}-50 text-${s.c}-600 rounded-xl flex items-center justify-center text-lg` }, React.createElement('i', { className: `fas ${s.i}` })),
+                            { l: '缺貨警告', v: stats.lowStockItems, i: 'fa-bell', c: 'rose', w: stats.lowStockItems > 0 },
+                            { l: '批價市值', v: `$${stats.totalWholesale.toLocaleString()}`, i: 'fa-warehouse', c: 'emerald' },
+                            { l: '零售市值', v: `$${stats.totalRetail.toLocaleString()}`, i: 'fa-chart-line', c: 'orange' }
+                        ].map(s => React.createElement('div', { key: s.l, className: "bg-white p-4 rounded-2xl border border-slate-100 flex flex-col gap-2 shadow-sm" },
+                            React.createElement('div', { className: `w-8 h-8 bg-${s.c}-50 text-${s.c}-600 rounded-lg flex items-center justify-center text-xs` }, React.createElement('i', { className: `fas ${s.i}` })),
                             React.createElement('div', null,
-                                React.createElement('p', { className: "text-[9px] font-black text-slate-400 uppercase tracking-widest" }, s.l),
-                                React.createElement('p', { className: `text-xl font-black ${s.w ? 'text-rose-500' : 'text-slate-800'}` }, s.v)
+                                React.createElement('p', { className: "text-[8px] font-black text-slate-400 uppercase tracking-widest" }, s.l),
+                                React.createElement('p', { className: `text-sm font-black ${s.w ? 'text-rose-500' : 'text-slate-800'}` }, s.v)
                             )
                         ))
                     ),
 
-                    // Quick Actions
+                    // Actions Row
                     React.createElement('div', { className: "flex gap-2 overflow-x-auto no-scrollbar pb-1" },
-                        React.createElement('button', { onClick: handleStartInventory, className: "whitespace-nowrap bg-indigo-600 text-white px-5 py-3 rounded-xl font-black text-xs shadow-sm active:scale-95" }, "開始新週盤點"),
-                        React.createElement('button', { onClick: handleAI, className: "whitespace-nowrap bg-white border border-indigo-100 text-indigo-600 px-5 py-3 rounded-xl font-black text-xs shadow-sm active:scale-95" }, 
-                            isAnalyzing ? "分析中..." : "AI 補貨分析"
+                        React.createElement('button', { onClick: handleStartInventory, className: "whitespace-nowrap bg-emerald-600 text-white px-4 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all" }, "新週盤點"),
+                        React.createElement('button', { onClick: handleExportExcel, className: "whitespace-nowrap bg-amber-500 text-white px-4 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all" }, "導出 CSV"),
+                        React.createElement('button', { onClick: () => setIsModalOpen(true), className: "whitespace-nowrap bg-white border border-slate-200 text-slate-600 px-4 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all" }, "新增商品"),
+                        React.createElement('button', { onClick: handleAI, className: "whitespace-nowrap bg-indigo-600 text-white px-4 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all flex items-center gap-2" }, 
+                            isAnalyzing ? React.createElement('i', { className: "fas fa-spinner fa-spin" }) : React.createElement('i', { className: "fas fa-robot" }),
+                            "AI 分析"
                         )
                     ),
 
                     // AI Suggestion Box
                     aiAnalysis && React.createElement('div', { className: "bg-indigo-50 border border-indigo-100 rounded-2xl p-4 animate-in slide-in-from-top-2" },
-                        React.createElement('div', { className: "flex items-center gap-2 mb-2" },
-                            React.createElement('i', { className: "fas fa-robot text-indigo-600 text-xs" }),
-                            React.createElement('h4', { className: "text-indigo-900 font-black text-xs" }, "AI 顧問分析建議")
-                        ),
-                        React.createElement('p', { className: "text-[11px] text-slate-700 leading-relaxed" }, aiAnalysis)
+                        React.createElement('p', { className: "text-[11px] text-slate-700 leading-relaxed font-medium" }, 
+                            React.createElement('i', { className: "fas fa-lightbulb mr-2 text-indigo-600" }),
+                            aiAnalysis
+                        )
                     ),
 
                     // Filter UI
@@ -344,28 +423,28 @@
                             React.createElement('i', { className: "fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 text-xs" }),
                             React.createElement('input', { 
                                 type: "text", 
-                                placeholder: "搜尋產品名稱...", 
+                                placeholder: "輸入名稱關鍵字...", 
                                 value: searchTerm, 
                                 onChange: e => setSearchTerm(e.target.value), 
-                                className: "w-full pl-11 pr-4 py-4 rounded-xl border border-slate-200 outline-none text-sm font-bold shadow-sm bg-white focus:border-indigo-300 transition-colors" 
+                                className: "w-full pl-11 pr-4 py-4 rounded-xl border border-slate-200 outline-none text-sm font-bold bg-white focus:border-indigo-200" 
                             })
                         ),
                         React.createElement('div', { className: "flex bg-white p-1 rounded-xl shadow-sm border border-slate-100 overflow-x-auto no-scrollbar" },
                             ['全部', '風乾零食', '凍乾零食', '用品'].map(t => React.createElement('button', { 
                                 key: t, 
                                 onClick: () => setActiveTab(t), 
-                                className: `flex-1 px-4 py-3 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === t ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400'}` 
+                                className: `flex-1 px-3 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === t ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400'}` 
                             }, t))
                         )
                     ),
 
-                    // Product List
-                    React.createElement('div', { className: "space-y-3 pb-28" },
+                    // List
+                    React.createElement('div', { className: "space-y-3 pb-24" },
                         filteredProducts.map(p => {
                             const isLow = p.currentStock <= p.safetyStock;
                             return React.createElement('div', { 
                                 key: p.id, 
-                                className: `product-card bg-white p-5 rounded-2xl shadow-sm border transition-all duration-300 w-full ${isLow ? 'border-rose-100 bg-rose-50/50 shadow-rose-100/20' : 'border-slate-100'}` 
+                                className: `product-card bg-white p-5 rounded-2xl shadow-sm border w-full ${isLow ? 'border-rose-100 bg-rose-50/40' : 'border-slate-100'}` 
                             },
                                 React.createElement('div', { className: "flex justify-between items-start mb-4" },
                                     React.createElement('div', { className: "flex-1 mr-4" },
@@ -373,38 +452,34 @@
                                         React.createElement('h3', { className: "font-black text-slate-700 text-sm mt-1.5 leading-snug" }, p.name)
                                     ),
                                     isLow && React.createElement('div', { className: "flex items-center gap-1.5 text-rose-500 mt-1" },
-                                        React.createElement('i', { className: "fas fa-exclamation-triangle text-[10px]" }),
-                                        React.createElement('span', { className: "text-[10px] font-black uppercase tracking-tight" }, "缺貨")
+                                        React.createElement('i', { className: "fas fa-exclamation-circle text-[10px]" }),
+                                        React.createElement('span', { className: "text-[10px] font-black uppercase tracking-tighter" }, "缺貨")
                                     )
                                 ),
                                 React.createElement('div', { className: "flex items-center justify-between border-t border-slate-100 pt-4" },
                                     React.createElement('div', null,
-                                        React.createElement('p', { className: "text-[10px] font-bold text-slate-400" }, `上週: ${p.lastWeekStock} | 安全庫存: ${p.safetyStock}`),
-                                        React.createElement('p', { className: "text-xs font-black text-indigo-400 mt-1" }, `零售價 $${p.retailPrice}`)
+                                        React.createElement('p', { className: "text-[10px] font-bold text-slate-400" }, `安全: ${p.safetyStock} | 上週: ${p.lastWeekStock}`),
+                                        React.createElement('p', { className: "text-xs font-black text-slate-300 mt-1" }, `零售 $${p.retailPrice}`)
                                     ),
                                     React.createElement('div', { className: "flex items-center gap-4" },
                                         React.createElement('button', { 
                                             onClick: () => handleUpdateStock(p.id, Math.max(0, p.currentStock - 1)), 
-                                            className: "w-11 h-11 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 no-select active:scale-90 transition-transform shadow-inner border border-slate-100" 
+                                            className: "w-11 h-11 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 active:scale-90 transition-transform shadow-inner border border-slate-100" 
                                         }, React.createElement('i', { className: "fas fa-minus text-xs" })),
-                                        React.createElement('span', { className: `text-2xl font-black min-w-[2rem] text-center ${isLow ? 'text-rose-600' : 'text-indigo-600'}` }, p.currentStock),
+                                        React.createElement('span', { className: `text-2xl font-black min-w-[2.2rem] text-center ${isLow ? 'text-rose-600' : 'text-indigo-600'}` }, p.currentStock),
                                         React.createElement('button', { 
                                             onClick: () => handleUpdateStock(p.id, p.currentStock + 1), 
-                                            className: "w-11 h-11 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 no-select active:scale-90 transition-transform shadow-sm border border-slate-200/50" 
+                                            className: "w-11 h-11 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 active:scale-90 transition-transform shadow-sm border border-slate-200/50" 
                                         }, React.createElement('i', { className: "fas fa-plus text-xs" }))
                                     )
                                 )
                             );
-                        }),
-                        filteredProducts.length === 0 && React.createElement('div', { className: "p-20 text-center" },
-                            React.createElement('i', { className: "fas fa-box-open text-4xl text-slate-200 mb-4" }),
-                            React.createElement('p', { className: "text-slate-400 font-bold text-sm" }, "無相符商品")
-                        )
+                        })
                     )
                 ),
 
-                React.createElement('footer', { className: "fixed bottom-0 left-0 w-full py-5 bg-white border-t text-center z-40 shadow-[0_-4px_12px_rgba(0,0,0,0.03)]" },
-                    React.createElement('p', { className: "text-[8px] font-black text-slate-300 uppercase tracking-[0.4em]" }, "© 2025 AOAWOW PREMIUM SYSTEM")
+                React.createElement('footer', { className: "fixed bottom-0 left-0 w-full py-5 bg-white border-t text-center z-40 shadow-[0_-4px_12px_rgba(0,0,0,0.02)]" },
+                    React.createElement('p', { className: "text-[8px] font-black text-slate-300 uppercase tracking-[0.4em]" }, "© 2025 AOAWOW PREMIUM INVENTORY")
                 )
             );
         };
